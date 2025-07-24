@@ -1,7 +1,7 @@
 package android.template.feature.mymodel.ui
 
 import android.template.core.ui.MyApplicationTheme
-import android.template.feature.mymodel.ui.MyModelUiState.Success
+import android.template.feature.mymodel.ui.TrackingUiState.Success
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,10 +23,13 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
-fun MyModelScreen(modifier: Modifier = Modifier, viewModel: MyModelViewModel = hiltViewModel()) {
+fun TrackingScreen(
+    modifier: Modifier = Modifier,
+    viewModel: TrackingViewModel = hiltViewModel()
+) {
     val items by viewModel.uiState.collectAsStateWithLifecycle()
     if (items is Success) {
-        MyModelScreen(
+        TrackingScreen(
             items = (items as Success).data,
             onSave = { name -> viewModel.addMyModel(name) },
             modifier = modifier
@@ -35,7 +38,7 @@ fun MyModelScreen(modifier: Modifier = Modifier, viewModel: MyModelViewModel = h
 }
 
 @Composable
-internal fun MyModelScreen(
+internal fun TrackingScreen(
     items: List<String>,
     onSave: (name: String) -> Unit,
     modifier: Modifier = Modifier
@@ -67,7 +70,7 @@ internal fun MyModelScreen(
 @Composable
 private fun DefaultPreview() {
     MyApplicationTheme {
-        MyModelScreen(listOf("Compose", "Room", "Kotlin"), onSave = {})
+        TrackingScreen(listOf("Compose", "Room", "Kotlin"), onSave = {})
     }
 }
 
@@ -75,6 +78,6 @@ private fun DefaultPreview() {
 @Composable
 private fun PortraitPreview() {
     MyApplicationTheme {
-        MyModelScreen(listOf("Compose", "Room", "Kotlin"), onSave = {})
+        TrackingScreen(listOf("Compose", "Room", "Kotlin"), onSave = {})
     }
 }
