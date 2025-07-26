@@ -10,12 +10,12 @@ import kotlinx.coroutines.flow.Flow
 @Entity
 data class Waypoint(
     @PrimaryKey(autoGenerate = true)
-    val id: Int = 0,
+    val id: Long = 0L,
     val timestamp: Long,
     val speed: Float,
     val latitude: Double,
     val longitude: Double,
-    val tripId: Int
+    val tripId: Long
 )
 
 @Dao

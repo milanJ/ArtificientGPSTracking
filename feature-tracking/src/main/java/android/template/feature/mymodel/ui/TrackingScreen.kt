@@ -5,6 +5,7 @@ import android.template.feature.mymodel.ui.TrackingUiState.Success
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -21,20 +22,41 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
+import com.google.maps.android.compose.rememberCameraPositionState
 
 @Composable
 fun TrackingScreen(
     modifier: Modifier = Modifier,
     viewModel: TrackingViewModel = hiltViewModel()
 ) {
-    val items by viewModel.uiState.collectAsStateWithLifecycle()
-    if (items is Success) {
-        TrackingScreen(
-            items = (items as Success).data,
-            onSave = { name -> viewModel.addMyModel(name) },
-            modifier = modifier
+    val singapore = LatLng(1.35, 103.87)
+
+    GoogleMap(
+        modifier = Modifier.fillMaxSize(),
+        cameraPositionState = rememberCameraPositionState {
+            position = CameraPosition.fromLatLngZoom(singapore, 10f)
+        }
+    ) {
+        Marker(
+            state = MarkerState(position = singapore),
+            title = "Singapore",
+            snippet = "Marker in Singapore"
         )
     }
+
+//    val items by viewModel.uiState.collectAsStateWithLifecycle()
+//    if (items is Success) {
+//        TrackingScreen(
+//            items = (items as Success).data,
+//            onSave = { name -> viewModel.addMyModel(name) },
+//            modifier = modifier
+//        )
+//    }
 }
 
 @Composable
@@ -46,7 +68,9 @@ internal fun TrackingScreen(
     Column(modifier) {
         var nameMyModel by remember { mutableStateOf("Compose") }
         Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 24.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             TextField(

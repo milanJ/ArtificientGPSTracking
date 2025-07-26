@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 @Entity
 data class Trip(
     @PrimaryKey(autoGenerate = true)
-    val id: Int = 0,
+    val id: Long = 0L,
     val startTimestamp: Long,
     val duration: Long,
     val distance: Double
@@ -31,5 +31,5 @@ interface TripDao {
     @Insert
     suspend fun insertTrip(
         item: Trip
-    ): Int
+    ): Long
 }

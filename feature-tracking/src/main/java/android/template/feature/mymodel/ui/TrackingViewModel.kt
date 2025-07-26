@@ -17,16 +17,16 @@ class TrackingViewModel @Inject constructor(
     private val tripsRepository: TripsRepository
 ) : ViewModel() {
 
-    val uiState: StateFlow<TrackingUiState> = tripsRepository
-        .myModels.map<List<String>, TrackingUiState> { Success(data = it) }
-        .catch { emit(Error(it)) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), Loading)
-
-    fun addMyModel(name: String) {
-        viewModelScope.launch {
-            myModelRepository.add(name)
-        }
-    }
+//    val uiState: StateFlow<TrackingUiState> = tripsRepository
+//        .myModels.map<List<String>, TrackingUiState> { Success(data = it) }
+//        .catch { emit(Error(it)) }
+//        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), Loading)
+//
+//    fun addMyModel(name: String) {
+//        viewModelScope.launch {
+//            myModelRepository.add(name)
+//        }
+//    }
 }
 
 sealed interface TrackingUiState {
