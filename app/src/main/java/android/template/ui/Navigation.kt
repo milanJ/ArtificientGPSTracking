@@ -3,6 +3,7 @@ package android.template.ui
 import android.app.Activity
 import android.template.R
 import android.template.feature.mymodel.ui.TrackingScreen
+import android.template.feature.settings.ui.SettingsScreen
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -143,11 +144,9 @@ fun MainNavHost(
             ) {}
         }
         composable(Screen.SETTINGS.route) {
-            Box( // TODO: Replace with the actual screen
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Red)
-            ) {}
+            SettingsScreen(
+                modifier = Modifier.padding(0.dp)
+            )
         }
     }
 }

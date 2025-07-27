@@ -74,6 +74,7 @@ android {
 dependencies {
     implementation(project(":core-ui"))
     implementation(project(":feature-tracking"))
+    implementation(project(":feature-settings"))
 
     // Core Android dependencies
     implementation(libs.androidx.core.ktx)
