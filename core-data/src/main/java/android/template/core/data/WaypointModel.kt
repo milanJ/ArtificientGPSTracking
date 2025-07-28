@@ -8,5 +8,5 @@ data class WaypointModel(
     val speed: Float,
     val latitude: Double,
     val longitude: Double,
-    val tripId: Int
+    val tripId: Long
 )
