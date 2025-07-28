@@ -8,6 +8,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -37,12 +38,20 @@ class DefaultSettingsRepository @Inject constructor(
             .map { prefs -> prefs[backgroundTrackingPreferenceKey] ?: SettingsRepository.DEFAULT_BACKGROUND_TRACKING }
             .flowOn(ioDispatcher)
 
+    override suspend fun getLocationInterval(): Int = applicationContext.dataStore
+        .data
+        .first()[locationIntervalPreferenceKey] ?: SettingsRepository.DEFAULT_LOCATION_INTERVAL
+
     override suspend fun setLocationInterval(
         value: Int
     ) = with(ioDispatcher) {
         applicationContext.dataStore.edit { it[locationIntervalPreferenceKey] = value }
         return@with
     }
+
+    override suspend fun getBackgroundTracking(): Boolean = applicationContext.dataStore
+        .data
+        .first()[backgroundTrackingPreferenceKey] ?: SettingsRepository.DEFAULT_BACKGROUND_TRACKING
 
     override suspend fun setBackgroundTracking(
         enabled: Boolean

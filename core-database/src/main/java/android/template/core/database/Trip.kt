@@ -14,7 +14,7 @@ data class Trip(
     val id: Long = 0L,
     val startTimestamp: Long,
     val duration: Long,
-    val distance: Double
+    val distance: Int
 )
 
 @Dao

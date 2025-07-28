@@ -13,6 +13,10 @@ interface TripsRepository {
         timestamp: Long
     ): TripModel
 
+    suspend fun updateTrip(
+        trip: TripModel
+    )
+
     suspend fun addWaypoint(
         waypoint: WaypointModel
     )

@@ -35,15 +35,21 @@ class DefaultTripsRepository @Inject constructor(
         val trip = Trip(
             startTimestamp = timestamp,
             duration = 0,
-            distance = 0.0
+            distance = 0
         )
         val tripId = tripDao.insertTrip(trip)
         return@withContext TripModel(
             id = tripId,
             startDate = Date(timestamp),
             duration = 0,
-            distance = 0.0
+            distance = 0
         )
+    }
+
+    override suspend fun updateTrip(
+        trip: TripModel
+    ) = withContext(ioDispatcher) {
+        tripDao.updateTrip(trip.toTrip())
     }
 
     override suspend fun addWaypoint(
@@ -64,6 +70,13 @@ class DefaultTripsRepository @Inject constructor(
 private fun Trip.toTripModel() = TripModel(
     id = id,
     startDate = Date(startTimestamp),
+    duration = duration,
+    distance = distance
+)
+
+private fun TripModel.toTrip() = Trip(
+    id = id,
+    startTimestamp = startDate.time,
     duration = duration,
     distance = distance
 )

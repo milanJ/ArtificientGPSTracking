@@ -9,5 +9,5 @@ data class TripModel(
     val id: Long,
     val startDate: Date,
     val duration: Long,
-    val distance: Double
+    val distance: Int
 )

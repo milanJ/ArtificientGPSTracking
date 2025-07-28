@@ -11,9 +11,13 @@ interface SettingsRepository {
 
     val backgroundTracking: Flow<Boolean>
 
+    suspend fun getLocationInterval(): Int
+
     suspend fun setLocationInterval(
         value: Int
     )
+
+    suspend fun getBackgroundTracking(): Boolean
 
     suspend fun setBackgroundTracking(
         enabled: Boolean
