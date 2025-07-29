@@ -5,7 +5,6 @@ import androidx.room.Entity
 import androidx.room.Insert
 import androidx.room.PrimaryKey
 import androidx.room.Query
-import kotlinx.coroutines.flow.Flow
 
 @Entity
 data class Waypoint(
@@ -23,8 +22,8 @@ interface WaypointDao {
 
     @Query("SELECT * FROM waypoint WHERE tripId = :tripId ORDER BY timestamp ASC")
     fun getWaypoints(
-        tripId: Int = 0
-    ): Flow<List<Waypoint>>
+        tripId: Long
+    ): List<Waypoint>
 
     @Insert
     suspend fun insertWaypoint(

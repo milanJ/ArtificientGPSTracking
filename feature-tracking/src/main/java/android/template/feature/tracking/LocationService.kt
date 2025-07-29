@@ -229,7 +229,7 @@ class LocationService() : LifecycleService() {
             previousLocation = location
             tripDistanceTraveledTotal = 0
 
-            currentTrip = tripsRepository.createTrip(locationTrackingStartTime)
+            currentTrip = tripsRepository.createTrip(System.currentTimeMillis())
 
             val waypoint = WaypointModel(
                 timestamp = System.currentTimeMillis(),

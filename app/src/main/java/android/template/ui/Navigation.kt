@@ -4,8 +4,8 @@ import android.app.Activity
 import android.template.R
 import android.template.feature.tracking.ui.TrackingScreen
 import android.template.feature.settings.ui.SettingsScreen
+import android.template.feature.trip_history.ui.TripHistoryScreen
 import androidx.activity.compose.LocalActivity
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -27,7 +27,6 @@ import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -137,11 +136,9 @@ fun MainNavHost(
             )
         }
         composable(Screen.TRIP_HISTORY.route) {
-            Box( // TODO: Replace with the actual screen
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Blue)
-            ) {}
+            TripHistoryScreen(
+                modifier = Modifier.padding(0.dp)
+            )
         }
         composable(Screen.SETTINGS.route) {
             SettingsScreen(
