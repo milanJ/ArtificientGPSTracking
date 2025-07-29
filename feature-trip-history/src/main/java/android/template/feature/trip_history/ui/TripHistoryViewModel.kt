@@ -1,11 +1,10 @@
 package android.template.feature.trip_history.ui
 
-import android.icu.text.DateFormat
 import android.template.core.data.TripModel
 import android.template.core.data.TripsRepository
 import android.template.core.data.WaypointModel
+import android.template.core.formaters.DateTimeFormatter
 import android.template.core.util.formatKilometers
-import android.text.format.DateUtils
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -26,6 +25,7 @@ import javax.inject.Inject
 @HiltViewModel
 class TripHistoryViewModel @Inject constructor(
     private val tripsRepository: TripsRepository,
+    private val dateFormatter: DateTimeFormatter,
     private val ioDispatcher: CoroutineDispatcher
 ) : ViewModel() {
 
@@ -33,7 +33,7 @@ class TripHistoryViewModel @Inject constructor(
         .trips
         .map<List<TripModel>, TripHistoryUiState> {
             val uiModels = it.map { genre ->
-                genre.toTripUiModel(dateFormat)
+                genre.toTripUiModel(dateFormatter)
             }
             TripHistoryUiState.Success(data = uiModels)
         }
@@ -48,8 +48,6 @@ class TripHistoryViewModel @Inject constructor(
 
     private val _csvExport = MutableStateFlow<CsvExportModel?>(null)
     val csvExport: StateFlow<CsvExportModel?> = _csvExport.asStateFlow()
-
-    private val dateFormat = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG, Locale.getDefault())
 
     fun tripClicked(
         trip: TripUiModel
@@ -96,11 +94,11 @@ data class TripUiModel(
 )
 
 private fun TripModel.toTripUiModel(
-    dateFormat: DateFormat
+    dateFormatter: DateTimeFormatter
 ) = TripUiModel(
     id = id,
-    startTimeAndDate = dateFormat.format(startDate),
-    duration = DateUtils.formatElapsedTime(duration / 1000L),
+    startTimeAndDate = dateFormatter.formatDateTime(startDate),
+    duration = dateFormatter.formatElapsedTime(duration),
     distance = formatKilometers(distance, Locale.getDefault()),
 )
 
