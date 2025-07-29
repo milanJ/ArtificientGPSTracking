@@ -1,5 +1,6 @@
 package android.template.feature.trip_history.ui
 
+import android.app.Activity
 import android.content.Intent
 import android.template.core.ui.MyApplicationTheme
 import android.template.feature.trip_history.R
@@ -9,12 +10,18 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -25,6 +32,9 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -89,7 +99,7 @@ fun TripHistoryScreen(
             if (trips.isEmpty()) {
                 EmptyState()
             } else {
-                TripsList(
+                TripContent(
                     modifier = modifier,
                     trips = trips,
                     onTripClick = { trip ->
@@ -101,66 +111,176 @@ fun TripHistoryScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
-internal fun TripsList(
+internal fun TripContent(
     modifier: Modifier = Modifier,
     trips: List<TripUiModel>,
     onTripClick: (TripUiModel) -> Unit = {}
 ) {
-    val context = LocalActivity.current!!
     val snackBarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
+
+    val windowSizeClass = calculateWindowSizeClass(LocalActivity.current as Activity)
+    val isExpanded = windowSizeClass.widthSizeClass >= WindowWidthSizeClass.Medium
 
     Scaffold(
         topBar = { TopBar() },
         snackbarHost = { SnackbarHost(hostState = snackBarHostState) }
     ) { paddingValues ->
-        LazyColumn(
-            modifier = modifier
-                .fillMaxSize()
-                .padding(top = paddingValues.calculateTopPadding())
-        ) {
-            items(trips.size) { index ->
-                val item = trips[index]
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            scope.launch {
-                                snackBarHostState.showSnackbar(
-                                    message = ContextCompat.getString(context, R.string.exporting_trip_data_snackbar_message),
-                                    actionLabel = ContextCompat.getString(context, R.string.dismiss)
-                                )
-                            }
-                            onTripClick.invoke(item)
+        if (isExpanded) {
+            // If wa are on a wide screen(tablet or phone in landscape mode) show trips in a grid.
+            TripsGrid(
+                modifier = modifier,
+                paddingValues = paddingValues,
+                snackBarHostState = snackBarHostState,
+                trips = trips,
+                onTripClick = onTripClick
+            )
+        } else {
+            // If we are on a phone, show trips in a list.
+            TripsList(
+                modifier = modifier,
+                paddingValues = paddingValues,
+                snackBarHostState = snackBarHostState,
+                trips = trips,
+                onTripClick = onTripClick
+            )
+        }
+    }
+}
+
+@Composable
+internal fun TripsList(
+    modifier: Modifier = Modifier,
+    paddingValues: PaddingValues,
+    snackBarHostState: SnackbarHostState,
+    trips: List<TripUiModel>,
+    onTripClick: (TripUiModel) -> Unit = {}
+) {
+    val context = LocalActivity.current!!
+    val scope = rememberCoroutineScope()
+
+    LazyColumn(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(top = paddingValues.calculateTopPadding())
+    ) {
+        items(trips.size) { index ->
+            val item = trips[index]
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        scope.launch {
+                            snackBarHostState.showSnackbar(
+                                message = ContextCompat.getString(context, R.string.exporting_trip_data_snackbar_message),
+                                actionLabel = ContextCompat.getString(context, R.string.dismiss)
+                            )
                         }
-                        .background(Color.Transparent)
-                        .padding(16.dp)
+                        onTripClick.invoke(item)
+                    }
+                    .background(Color.Transparent)
+                    .padding(16.dp)
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(
-                            text = item.startTimeAndDate,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                        Text(
-                            text = item.distance,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                        Text(
-                            text = item.duration,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onBackground
+                    Text(
+                        text = item.startTimeAndDate,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Text(
+                        text = item.distance,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Text(
+                        text = item.duration,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+            }
+            HorizontalDivider()
+        }
+    }
+}
+
+@Composable
+internal fun TripsGrid(
+    modifier: Modifier = Modifier,
+    paddingValues: PaddingValues,
+    snackBarHostState: SnackbarHostState,
+    trips: List<TripUiModel>,
+    onTripClick: (TripUiModel) -> Unit = {}
+) {
+    val context = LocalActivity.current!!
+    val scope = rememberCoroutineScope()
+
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(3),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues),
+        contentPadding = PaddingValues(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(trips.size) { index ->
+            TripCard(
+                modifier,
+                trips[index],
+                onTripClick = {
+                    scope.launch {
+                        snackBarHostState.showSnackbar(
+                            message = ContextCompat.getString(context, R.string.exporting_trip_data_snackbar_message),
+                            actionLabel = ContextCompat.getString(context, R.string.dismiss)
                         )
                     }
+                    onTripClick(trips[index])
                 }
-                HorizontalDivider()
-            }
+            )
+        }
+    }
+}
+
+@Composable
+internal fun TripCard(
+    modifier: Modifier = Modifier,
+    trip: TripUiModel,
+    onTripClick: (TripUiModel) -> Unit = {}
+) {
+    Card(
+        modifier = modifier
+            .clickable {
+                onTripClick.invoke(trip)
+            },
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = trip.startTimeAndDate,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Text(
+                text = trip.distance,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Text(
+                text = trip.duration,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onBackground
+            )
         }
     }
 }
@@ -248,7 +368,7 @@ internal fun TopBar() {
 
 @Preview(showBackground = true)
 @Composable
-private fun TripsListPreview() {
+private fun TripsContentPreview() {
     val trips = listOf(
         TripUiModel(
             id = 1,
@@ -277,7 +397,7 @@ private fun TripsListPreview() {
     )
 
     MyApplicationTheme {
-        TripsList(trips = trips)
+        TripContent(trips = trips)
     }
 }
 

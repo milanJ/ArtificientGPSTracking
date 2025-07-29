@@ -40,7 +40,11 @@ class TripHistoryViewModel @Inject constructor(
         .catch {
             emit(TripHistoryUiState.Error(it))
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TripHistoryUiState.Loading)
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            TripHistoryUiState.Loading
+        )
 
     private val _csvExport = MutableStateFlow<CsvExportModel?>(null)
     val csvExport: StateFlow<CsvExportModel?> = _csvExport.asStateFlow()
@@ -58,7 +62,7 @@ class TripHistoryViewModel @Inject constructor(
             val waypointsCsv = withContext(ioDispatcher) {
                 waypoints.toWaypointsCsv()
             }
-            val tripName = "trip_${trip.startTimeAndDate}.csv"
+            val tripName = "Trip ${trip.startTimeAndDate}.csv"
             _csvExport.value = CsvExportModel(tripName, waypointsCsv)
         }
     }
