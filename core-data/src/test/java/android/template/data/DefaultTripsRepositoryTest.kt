@@ -5,13 +5,16 @@ import android.template.core.database.Trip
 import android.template.core.database.TripDao
 import android.template.core.database.Waypoint
 import android.template.core.database.WaypointDao
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.TestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
@@ -22,11 +25,16 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class DefaultTripsRepositoryTest {
 
-    private lateinit var testDispatcher: TestDispatcher
+    private val testDispatcher = StandardTestDispatcher()
 
     @Before
     fun setUp() {
-        testDispatcher = StandardTestDispatcher()
+        Dispatchers.setMain(testDispatcher)
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
     }
 
     @Test
@@ -44,7 +52,7 @@ class DefaultTripsRepositoryTest {
         assertEquals(trips.first().id, createdTrip.id)
         assertEquals(trips.first().startDate.time, 100L)
         assertEquals(trips.first().duration, 0L)
-        assertEquals(trips.first().distance, 0.0, 0.1)
+        assertEquals(trips.first().distance, 0)
     }
 }
 
@@ -65,8 +73,8 @@ private class FakeTripDao : TripDao {
 
     override suspend fun insertTrip(
         item: Trip
-    ): Int {
-        val trip = item.copy(id = data.size)
+    ): Long {
+        val trip = item.copy(id = data.size.toLong())
         data.add(trip)
         return trip.id
     }
@@ -77,12 +85,12 @@ private class FakeWaypointDao : WaypointDao {
     private val data = mutableListOf<Waypoint>()
 
     override fun getWaypoints(
-        tripId: Int
-    ): Flow<List<Waypoint>> = flow {
-        emit(data)
-    }
+        tripId: Long
+    ): List<Waypoint> = data.toList()
 
-    override suspend fun insertWaypoint(item: Waypoint) {
+    override suspend fun insertWaypoint(
+        item: Waypoint
+    ) {
         data.add(0, item)
     }
 }

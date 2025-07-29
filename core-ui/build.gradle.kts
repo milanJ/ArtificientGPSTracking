@@ -3,6 +3,8 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.kotlin.kapt)
 }
 
 android {
@@ -47,4 +49,8 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     // Tooling
     debugImplementation(libs.androidx.compose.ui.tooling)
+
+    // Arch Components
+    implementation(libs.hilt.android)
+    kapt(libs.hilt.compiler)
 }

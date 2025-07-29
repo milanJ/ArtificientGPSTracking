@@ -303,6 +303,7 @@ internal fun EmptyState() {
                 contentDescription = null
             )
             Text(
+                modifier = Modifier.testTag("EmptyState"),
                 text = stringResource(R.string.no_trips_recorded_message),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onPrimary,
