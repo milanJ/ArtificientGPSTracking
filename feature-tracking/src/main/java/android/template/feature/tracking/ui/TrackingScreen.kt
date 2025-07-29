@@ -417,20 +417,29 @@ private fun getAllRequiredPermissionsList(): List<String> = if (Build.VERSION.SD
         Manifest.permission.ACCESS_COARSE_LOCATION,
         Manifest.permission.FOREGROUND_SERVICE,
         Manifest.permission.FOREGROUND_SERVICE_LOCATION,
-        Manifest.permission.POST_NOTIFICATIONS
+        Manifest.permission.POST_NOTIFICATIONS,
+        Manifest.permission.ACTIVITY_RECOGNITION
     )
 } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
     listOf(
         Manifest.permission.ACCESS_FINE_LOCATION,
         Manifest.permission.ACCESS_COARSE_LOCATION,
         Manifest.permission.FOREGROUND_SERVICE,
-        Manifest.permission.POST_NOTIFICATIONS
+        Manifest.permission.POST_NOTIFICATIONS,
+        Manifest.permission.ACTIVITY_RECOGNITION
+    )
+} else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+    listOf(
+        Manifest.permission.ACCESS_FINE_LOCATION,
+        Manifest.permission.ACCESS_COARSE_LOCATION,
+        Manifest.permission.FOREGROUND_SERVICE,
+        Manifest.permission.ACTIVITY_RECOGNITION
     )
 } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
     listOf(
         Manifest.permission.ACCESS_FINE_LOCATION,
         Manifest.permission.ACCESS_COARSE_LOCATION,
-        Manifest.permission.FOREGROUND_SERVICE,
+        Manifest.permission.FOREGROUND_SERVICE
     )
 } else {
     listOf(
