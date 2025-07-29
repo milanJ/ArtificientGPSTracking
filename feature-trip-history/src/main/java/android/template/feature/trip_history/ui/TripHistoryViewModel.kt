@@ -3,23 +3,30 @@ package android.template.feature.trip_history.ui
 import android.icu.text.DateFormat
 import android.template.core.data.TripModel
 import android.template.core.data.TripsRepository
+import android.template.core.data.WaypointModel
 import android.template.core.util.formatKilometers
 import android.text.format.DateUtils
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
 class TripHistoryViewModel @Inject constructor(
-    tripsRepository: TripsRepository
+    private val tripsRepository: TripsRepository,
+    private val ioDispatcher: CoroutineDispatcher
 ) : ViewModel() {
 
     val uiState: StateFlow<TripHistoryUiState> = tripsRepository
@@ -35,7 +42,26 @@ class TripHistoryViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TripHistoryUiState.Loading)
 
+    private val _csvExport = MutableStateFlow<CsvExportModel?>(null)
+    val csvExport: StateFlow<CsvExportModel?> = _csvExport.asStateFlow()
+
     private val dateFormat = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG, Locale.getDefault())
+
+    fun tripClicked(
+        trip: TripUiModel
+    ) {
+        // Export the trip data into CSV. And let the user share it via a the Share Intent.
+        // This is a naive approach that will work small trips. For larger trips, we would have to move exporting to a Service,
+        // write waypoints into an actual file, and then share the file.
+        viewModelScope.launch {
+            val waypoints = tripsRepository.getWaypoints(trip.id)
+            val waypointsCsv = withContext(ioDispatcher) {
+                waypoints.toWaypointsCsv()
+            }
+            val tripName = "trip_${trip.startTimeAndDate}.csv"
+            _csvExport.value = CsvExportModel(tripName, waypointsCsv)
+        }
+    }
 }
 
 sealed interface TripHistoryUiState {
@@ -50,6 +76,12 @@ sealed interface TripHistoryUiState {
         val data: List<TripUiModel>
     ) : TripHistoryUiState
 }
+
+@Immutable
+data class CsvExportModel(
+    val tripName: String,
+    val waypointsCsv: String
+)
 
 @Immutable
 data class TripUiModel(
@@ -67,3 +99,17 @@ private fun TripModel.toTripUiModel(
     duration = DateUtils.formatElapsedTime(duration / 1000L),
     distance = formatKilometers(distance, Locale.getDefault()),
 )
+
+private fun List<WaypointModel>.toWaypointsCsv(): String {
+    val csvBuilder = StringBuilder()
+
+    // Append headers.
+    csvBuilder.append("Latitude,Longitude,Timestamp,Speed\n")
+
+    // Append data:
+    for (item in this) {
+        csvBuilder.append("${item.latitude},${item.longitude},${item.timestamp},${item.speed}\n")
+    }
+
+    return csvBuilder.toString()
+}

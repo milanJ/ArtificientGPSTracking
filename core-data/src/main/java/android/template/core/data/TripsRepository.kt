@@ -20,4 +20,8 @@ interface TripsRepository {
     suspend fun addWaypoint(
         waypoint: WaypointModel
     )
+
+    suspend fun getWaypoints(
+        tripId: Long
+    ): List<WaypointModel>
 }

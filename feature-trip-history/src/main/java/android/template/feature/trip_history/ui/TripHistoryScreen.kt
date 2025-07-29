@@ -1,7 +1,9 @@
 package android.template.feature.trip_history.ui
 
+import android.content.Intent
 import android.template.core.ui.MyApplicationTheme
 import android.template.feature.trip_history.R
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,10 +21,15 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -32,8 +39,10 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 
 /**
  * Displays the list of trips the user has recorded.
@@ -43,6 +52,26 @@ fun TripHistoryScreen(
     modifier: Modifier = Modifier,
     viewModel: TripHistoryViewModel = hiltViewModel()
 ) {
+    // This LaunchedEffect is used to show Intent chooser when the user clicks on a trip to export it.
+    val context = LocalActivity.current!!
+    LaunchedEffect(Unit) {
+        viewModel.csvExport.collect { csvExportModel ->
+            if (csvExportModel != null) {
+                val sendIntent: Intent = Intent().apply {
+                    action = Intent.ACTION_SEND
+                    type = "text/csv"
+                    putExtra(Intent.EXTRA_TEXT, csvExportModel.waypointsCsv)
+                    putExtra(Intent.EXTRA_SUBJECT, csvExportModel.tripName)
+                }
+                val shareIntent = Intent.createChooser(
+                    sendIntent,
+                    ContextCompat.getString(context, R.string.export_trip_data_intent_chooser_title)
+                )
+                context.startActivity(shareIntent)
+            }
+        }
+    }
+
     val trips by viewModel.uiState.collectAsStateWithLifecycle()
     when (trips) {
         is TripHistoryUiState.Loading -> {
@@ -64,7 +93,7 @@ fun TripHistoryScreen(
                     modifier = modifier,
                     trips = trips,
                     onTripClick = { trip ->
-                        // TODO: XXXX Handle on trip click
+                        viewModel.tripClicked(trip)
                     }
                 )
             }
@@ -79,8 +108,13 @@ internal fun TripsList(
     trips: List<TripUiModel>,
     onTripClick: (TripUiModel) -> Unit = {}
 ) {
+    val context = LocalActivity.current!!
+    val snackBarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
     Scaffold(
         topBar = { TopBar() },
+        snackbarHost = { SnackbarHost(hostState = snackBarHostState) }
     ) { paddingValues ->
         LazyColumn(
             modifier = modifier
@@ -93,6 +127,12 @@ internal fun TripsList(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
+                            scope.launch {
+                                snackBarHostState.showSnackbar(
+                                    message = ContextCompat.getString(context, R.string.exporting_trip_data_snackbar_message),
+                                    actionLabel = ContextCompat.getString(context, R.string.dismiss)
+                                )
+                            }
                             onTripClick.invoke(item)
                         }
                         .background(Color.Transparent)

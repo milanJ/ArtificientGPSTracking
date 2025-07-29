@@ -65,6 +65,14 @@ class DefaultTripsRepository @Inject constructor(
             )
         )
     }
+
+    override suspend fun getWaypoints(
+        tripId: Long
+    ): List<WaypointModel> = withContext(ioDispatcher) {
+        return@withContext waypointDao.getWaypoints(tripId).map {
+            it.toWaypointModel()
+        }
+    }
 }
 
 private fun Trip.toTripModel() = TripModel(
@@ -79,4 +87,12 @@ private fun TripModel.toTrip() = Trip(
     startTimestamp = startDate.time,
     duration = duration,
     distance = distance
+)
+
+private fun Waypoint.toWaypointModel() = WaypointModel(
+    timestamp = timestamp,
+    speed = speed,
+    latitude = latitude,
+    longitude = longitude,
+    tripId = tripId
 )
