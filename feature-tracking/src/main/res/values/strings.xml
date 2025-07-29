@@ -1,0 +1,20 @@
+<resources>
+    <string name="location_service_notification_channel_name">Trip Tracking</string>
+    <string name="location_service_notification_content_title">Artificient GPS Tracking</string>
+    <string name="location_service_notification_content_text">Recording location …</string>
+    <string name="location_service_tracking_stopped_notification_content_text">Location recording stopped due to inactivity</string>
+
+    <string name="start_recording_button_caption">Start recording</string>
+    <string name="stop_recording_button_caption">Stop recording</string>
+    <string name="pause_recording_button_caption">Pause recording</string>
+    <string name="resume_recording_button_caption">Resume recording</string>
+
+    <string name="user_position_marker_title">You are here</string>
+
+    <string name="current_speed_label">Current speed:</string>
+    <string name="distance_traveled_label">Distance traveled:</string>
+    <string name="elapsed_time_label">Elapsed time:</string>
+
+    <string name="permissions_request_explanation">Please approve all of the requested permissions, so that we can track your location.</string>
+    <string name="proceed_with_permissions_request_button_caption">Proceed</string>
+</resources>

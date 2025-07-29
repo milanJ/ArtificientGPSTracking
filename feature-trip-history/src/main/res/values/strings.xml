@@ -1,0 +1,10 @@
+<resources>
+    <string name="screen_title_trip_history">Trip History</string>
+
+    <string name="loading_trips_error_message">An error occurred while loading trips. Please report this to the developer(s).</string>
+    <string name="no_trips_recorded_message">This is where all of your recorded trips will be shown. Go record some trips!</string>
+
+    <string name="exporting_trip_data_snackbar_message">Exporting selected trip data  to CVS…</string>
+    <string name="dismiss">Dismiss</string>
+    <string name="export_trip_data_intent_chooser_title">Share trip data via</string>
+</resources>

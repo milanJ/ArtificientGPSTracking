@@ -1,41 +1,25 @@
-Architecture starter template (multi-module)
+Artificient GPS Tracking & Data Collection App
 ==================
 
-This template is compatible with the latest **stable** version of Android Studio.
+An app that collects real-time GPS data. The app simulates trip recording functionality and stores the location history locally. This can be used for scenarios such as delivery tracking in the
+Background.
 
-![Screenshot](https://github.com/android/architecture-templates/raw/main/screenshots.png)
-
-## Features
-
-* Room Database
-* Hilt
-* ViewModel, read+write
-* UI in Compose, list + write (Material3)
-* Navigation
-* Repository and data source
-* Kotlin Coroutines and Flow
-* Unit tests
-* UI tests using fake data with Hilt
-
-## Usage
+## How to build the app
 
 1. Clone this branch
+    ```
+    git clone git@github.com:milanJ/BragiMovieDb.git --branch main
+    ```
+2. Open the cloned repository in Android Studio.
+3. Create a `local.properties` file the project's root directory.
+4. Add a valid Google Maps API key to the `local.properties` file:
+   ```
+   MAPS_API_KEY=your_google_maps_api_key
+   ```
+5. In terminal run `./gradlew assemble` task.
+6. After the task finishes running, release and debug APK files will be located in the `/app/build/outputs/apk` directory.
 
-```
-git clone https://github.com/android/architecture-templates.git --branch multimodule
-```
+## General architecture
 
-
-2. Run the customizer script:
-
-```
-./customizer.sh your.package.name DataItemType [MyApplication]
-```
-
-Where `your.package.name` is your app ID (should be lowercase) and `DataItemType` is used for the
-name of the screen, exposed state and data base entity (should be PascalCase). You can add an optional application name.
-
-# License
-
-Now in Android is distributed under the terms of the Apache License (Version 2.0). See the
-[license](LICENSE) for more information.
+The app is based on MVVM architecture. It was built using Hilt, Coroutines, Material Design and Jetpack Compose.
+It is separated into 7 modules: `app`, `core-data`, `core-database`, `core-testing`, `core-ui`, `feature-settings`, `feature-tracking`, `feature-trip-history` and `test-app`.

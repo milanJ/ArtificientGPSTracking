@@ -1,18 +1,4 @@
-/*
- * Copyright (C) 2022 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+import java.util.Properties
 
 @Suppress("DSL_SCOPE_VIOLATION") // Remove when fixed https://youtrack.jetbrains.com/issue/KTIJ-19369
 plugins {
@@ -24,16 +10,25 @@ plugins {
     alias(libs.plugins.compose.compiler)
 }
 
+val localProperties = Properties().apply {
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        load(localPropertiesFile.inputStream())
+    }
+}
+
 android {
     namespace = "android.template"
     compileSdk = 35
 
     defaultConfig {
         applicationId = "android.template"
-        minSdk = 21
+        minSdk = 24
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
+
+        manifestPlaceholders["MAPS_API_KEY"] = localProperties["MAPS_API_KEY"] as String? ?: ""
 
         vectorDrawables {
             useSupportLibrary = true
@@ -78,7 +73,9 @@ android {
 
 dependencies {
     implementation(project(":core-ui"))
-    implementation(project(":feature-mymodel"))
+    implementation(project(":feature-tracking"))
+    implementation(project(":feature-trip-history"))
+    implementation(project(":feature-settings"))
 
     // Core Android dependencies
     implementation(libs.androidx.core.ktx)
@@ -101,6 +98,9 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+
+    // Material 3
+    implementation(libs.material3.window.size)
 
     // Tooling
     debugImplementation(libs.androidx.compose.ui.tooling)

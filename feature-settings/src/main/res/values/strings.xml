@@ -1,0 +1,8 @@
+<resources>
+    <string name="screen_title_settings">Settings</string>
+
+    <string name="location_update_interval_caption">Location Update Interval</string>
+    <string name="location_update_interval_value">%1$ds</string>
+
+    <string name="background_tracking_caption">Background Tracking</string>
+</resources>
