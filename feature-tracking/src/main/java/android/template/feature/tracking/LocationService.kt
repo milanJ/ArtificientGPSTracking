@@ -5,7 +5,11 @@ import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
 import android.location.Location
@@ -21,11 +25,15 @@ import android.template.feature.tracking.data.LocationRepository
 import android.template.feature.tracking.data.TrackingState
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.google.android.gms.location.ActivityRecognition
+import com.google.android.gms.location.ActivityRecognitionClient
+import com.google.android.gms.location.DetectedActivity
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -71,6 +79,30 @@ class LocationService() : LifecycleService() {
     private var isTrackingPaused: Boolean = false
     private var currentTrip: TripModel? = null
 
+    // Activity recognition related:
+    private val activityRecognitionBroadcastReceiver = object : BroadcastReceiver() {
+
+        override fun onReceive(
+            context: Context,
+            intent: Intent
+        ) {
+            val detectedActivityType = intent.getIntExtra(ACTIVITY_RECOGNITION_ACTION_EXTRA_ACTIVITY_TYPE, DetectedActivity.UNKNOWN)
+            val detectedActivityConfidence = intent.getIntExtra(ACTIVITY_RECOGNITION_ACTION_EXTRA_ACTIVITY_CONFIDENCE, 0)
+            Log.d(TAG, "onReceive() :: = detectedActivityType = $detectedActivityType, detectedActivityConfidence = $detectedActivityConfidence")
+
+            if (detectedActivityType == DetectedActivity.STILL && detectedActivityConfidence >= 75) {
+                if (activityRecognitionStillStartTimestamp == null) {
+                    activityRecognitionStillStartTimestamp = SystemClock.elapsedRealtime()
+                }
+            } else {
+                activityRecognitionStillStartTimestamp = null
+            }
+        }
+    }
+    private lateinit var activityRecognitionClient: ActivityRecognitionClient
+    private lateinit var activityRecognitionPendingIntent: PendingIntent
+    private var activityRecognitionStillStartTimestamp: Long? = null
+
     // Settings related:
     private var isBackgroundTracking: Boolean = SettingsRepository.DEFAULT_BACKGROUND_TRACKING
     private var locationInterval: Int = SettingsRepository.DEFAULT_LOCATION_INTERVAL
@@ -110,11 +142,37 @@ class LocationService() : LifecycleService() {
         }
     }
 
+    @SuppressLint("MissingPermission")
     override fun onCreate() {
         super.onCreate()
         Log.d(TAG, "onCreate()")
+
+        // Start location fetching:
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         restartLocationTracking()
+
+        // Start activity recognition:
+        activityRecognitionPendingIntent = PendingIntent.getBroadcast(
+            this,
+            0,
+            Intent(this, ActivityRecognitionReceiver::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+        )
+        activityRecognitionClient = ActivityRecognition.getClient(this)
+        activityRecognitionClient.requestActivityUpdates(ACTIVITY_RECOGNITION_DETECTION_INTERVAL, activityRecognitionPendingIntent)
+            .addOnSuccessListener {
+                Log.d(TAG, "onCreate() :: Activity recognition updates requested")
+            }
+            .addOnFailureListener { e: Exception ->
+                Log.e(TAG, "onCreate() :: Error requesting activity recognition updates", e)
+            }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(activityRecognitionBroadcastReceiver, IntentFilter(ACTIVITY_RECOGNITION_ACTION), RECEIVER_EXPORTED)
+        } else {
+            @Suppress("UnspecifiedRegisterReceiverFlag")
+            registerReceiver(activityRecognitionBroadcastReceiver, IntentFilter(ACTIVITY_RECOGNITION_ACTION))
+        }
     }
 
     override fun onStartCommand(
@@ -126,6 +184,7 @@ class LocationService() : LifecycleService() {
         Log.d(TAG, "onStartCommand() :: Command = ${intent?.action}")
         when (intent?.action) {
             ACTION_START_LOCATION_TRACKING -> {
+                activityRecognitionStillStartTimestamp = null
                 currentTrip = null
                 previousLocation = null
                 locationTrackingStartTime = SystemClock.elapsedRealtime()
@@ -135,6 +194,7 @@ class LocationService() : LifecycleService() {
             }
 
             ACTION_RESUME_LOCATION_TRACKING -> {
+                activityRecognitionStillStartTimestamp = null
                 isTrackingPaused = false
             }
 
@@ -143,9 +203,7 @@ class LocationService() : LifecycleService() {
             }
 
             ACTION_STOP_LOCATION_TRACKING -> {
-                isTrackingPaused = false
-                isTrackingLocation = false
-                restartLocationTracking()
+                stopTracking()
             }
 
             ACTION_STOP_SERVICE_IF_NOT_IN_FOREGROUND_MODE -> {
@@ -169,20 +227,30 @@ class LocationService() : LifecycleService() {
         return START_STICKY
     }
 
+    @SuppressLint("MissingPermission")
     override fun onDestroy() {
+        Log.d(TAG, "onDestroy()")
+
+        // Stop Activity recognition:
+        unregisterReceiver(activityRecognitionBroadcastReceiver)
+        activityRecognitionClient.removeActivityUpdates(activityRecognitionPendingIntent)
+
+        // Stop location fetching:
         isTrackingPaused = false
         isTrackingLocation = false
         fusedLocationClient?.removeLocationUpdates(locationCallback)
         currentTrip = null
         previousLocation = null
         locationTrackingStartTime = 0L
+
         super.onDestroy()
     }
 
+    @SuppressLint("MissingPermission")
     private suspend fun processLocationUpdate(
         location: Location?
     ) {
-        Log.d(TAG, "onLocationResult() :: location = $location")
+        Log.d(TAG, "onLocationResult() :: location = $location, activityRecognitionStillStartTimestamp = $activityRecognitionStillStartTimestamp")
 
         // If we are not tracking the user location just update the latitude and longitude of the user in the repository.
         if (!isTrackingLocation) {
@@ -288,6 +356,20 @@ class LocationService() : LifecycleService() {
             tripId = currentTrip!!.id
         )
         tripsRepository.addWaypoint(waypoint)
+
+        // The user has remained still for ACTIVITY_RECOGNITION_STILLNESS_TIMEOUT seconds, stop the tracking.
+        val activityRecognitionStillStartTimestampLocal = activityRecognitionStillStartTimestamp
+        if (activityRecognitionStillStartTimestampLocal != null
+            && (SystemClock.elapsedRealtime() - activityRecognitionStillStartTimestampLocal) > ACTIVITY_RECOGNITION_STILLNESS_TIMEOUT
+        ) {
+            // Show notification.
+            NotificationManagerCompat.from(this)
+                .notify(NOTIFICATION_ID_TRACKING_STOPPED_DUE_TO_STILLNESS, createTrackingStoppedDueStillnessNotification())
+
+            // Stop tracking.
+            locationRepository.setTrackingState(TrackingState.STOPPED)
+            stopTracking()
+        }
     }
 
     @SuppressLint("MissingPermission")
@@ -313,9 +395,9 @@ class LocationService() : LifecycleService() {
         if (isTrackingLocation && isBackgroundTracking) {
             Log.d(TAG, "restartLocationTracking() :: Moving the service to foreground.")
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                startForeground(NOTIFICATION_ID, createNotification(), FOREGROUND_SERVICE_TYPE_LOCATION)
+                startForeground(NOTIFICATION_ID_FOREGROUND, createForegroundServiceNotification(), FOREGROUND_SERVICE_TYPE_LOCATION)
             } else {
-                startForeground(NOTIFICATION_ID, createNotification())
+                startForeground(NOTIFICATION_ID_FOREGROUND, createForegroundServiceNotification())
             }
         } else {
             Log.d(TAG, "restartLocationTracking() :: Moving the service OUT of foreground.")
@@ -323,7 +405,34 @@ class LocationService() : LifecycleService() {
         }
     }
 
-    private fun createNotification(): Notification {
+    private fun stopTracking() {
+        activityRecognitionStillStartTimestamp = null
+        isTrackingPaused = false
+        isTrackingLocation = false
+        restartLocationTracking()
+    }
+
+    private fun createForegroundServiceNotification(): Notification {
+        createNotificationChannel()
+
+        return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
+            .setContentTitle(ContextCompat.getString(this, R.string.location_service_notification_content_title))
+            .setContentText(ContextCompat.getString(this, R.string.location_service_notification_content_text))
+            .setSmallIcon(android.R.drawable.ic_menu_mylocation)
+            .build()
+    }
+
+    private fun createTrackingStoppedDueStillnessNotification(): Notification {
+        createNotificationChannel()
+
+        return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
+            .setContentTitle(ContextCompat.getString(this, R.string.location_service_notification_content_title))
+            .setContentText(ContextCompat.getString(this, R.string.location_service_tracking_stopped_notification_content_text))
+            .setSmallIcon(android.R.drawable.ic_menu_mylocation)
+            .build()
+    }
+
+    private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 NOTIFICATION_CHANNEL_ID,
@@ -332,12 +441,6 @@ class LocationService() : LifecycleService() {
             )
             (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(channel)
         }
-
-        return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
-            .setContentTitle(ContextCompat.getString(this, R.string.location_service_notification_content_title))
-            .setContentText(ContextCompat.getString(this, R.string.location_service_notification_content_text))
-            .setSmallIcon(android.R.drawable.ic_menu_mylocation)
-            .build()
     }
 
     private fun areLocationPermissionsGranted(): Boolean = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
@@ -352,6 +455,15 @@ class LocationService() : LifecycleService() {
     }
 }
 
+const val ACTIVITY_RECOGNITION_ACTION_EXTRA_ACTIVITY_CONFIDENCE = "android.template.feature.tracking.LocationService.ACTIVITY_RECOGNITION.activity_confidence"
+const val ACTIVITY_RECOGNITION_ACTION_EXTRA_ACTIVITY_TYPE = "android.template.feature.tracking.LocationService.ACTIVITY_RECOGNITION.activity_type"
+const val ACTIVITY_RECOGNITION_ACTION = "android.template.feature.tracking.LocationService.ACTIVITY_RECOGNITION"
+
+private const val ACTIVITY_RECOGNITION_STILLNESS_TIMEOUT = 3L * 60L * 1000L // 3 minutes
+private const val ACTIVITY_RECOGNITION_DETECTION_INTERVAL = 10000L // 10 seconds
+
 private const val NOTIFICATION_CHANNEL_ID = "location_channel"
-private const val NOTIFICATION_ID = 11238
+private const val NOTIFICATION_ID_FOREGROUND = 11238
+private const val NOTIFICATION_ID_TRACKING_STOPPED_DUE_TO_STILLNESS = 11239
+
 private const val TAG = "LocationService"

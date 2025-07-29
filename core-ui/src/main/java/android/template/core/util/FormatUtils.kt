@@ -11,7 +11,6 @@ fun formatKilometers(
     val numberFormat = NumberFormat.getNumberInstance(locale)
     if (numberFormat is DecimalFormat) {
         val decimalFormat: DecimalFormat = numberFormat
-        // Adjust pattern based on desired precision for kilometers
         if (distanceInMeters < 1000) { // Less than 1 km, show meters
             return java.lang.String.format(locale, "%d m", distanceInMeters.toInt())
         } else {
@@ -20,5 +19,5 @@ fun formatKilometers(
             return java.lang.String.format(locale, "%s km", formattedValue)
         }
     }
-    return distanceInMeters.toString() // Fallback
+    return distanceInMeters.toString()
 }

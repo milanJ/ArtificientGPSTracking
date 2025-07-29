@@ -2,6 +2,7 @@
     <string name="location_service_notification_channel_name">Trip Tracking</string>
     <string name="location_service_notification_content_title">Artificient GPS Tracking</string>
     <string name="location_service_notification_content_text">Recording location …</string>
+    <string name="location_service_tracking_stopped_notification_content_text">Location recording stopped due to inactivity</string>
 
     <string name="start_recording_button_caption">Start recording</string>
     <string name="stop_recording_button_caption">Stop recording</string>

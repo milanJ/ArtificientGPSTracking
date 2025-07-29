@@ -39,7 +39,6 @@ android {
 dependencies {
     implementation(project(":core-data"))
     implementation(project(":core-ui"))
-    implementation(libs.play.services.location)
     androidTestImplementation(project(":core-testing"))
 
     // Core Android dependencies
@@ -73,8 +72,9 @@ dependencies {
     testImplementation(libs.hilt.android.testing)
     kaptTest(libs.hilt.android.compiler)
 
-    // Google Maps
+    // Google
     implementation(libs.maps.compose)
+    implementation(libs.play.services.location)
 
     // Local tests: jUnit, coroutines, Android runner
     testImplementation(libs.junit)

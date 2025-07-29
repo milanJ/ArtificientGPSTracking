@@ -1,5 +1,6 @@
 package android.template.feature.settings.ui
 
+import android.content.res.Configuration
 import android.template.core.ui.MyApplicationTheme
 import android.template.feature.settings.R
 import androidx.compose.foundation.background
@@ -77,7 +78,7 @@ internal fun SettingsScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surfaceBright, shape = RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(16.dp))
                     .padding(8.dp)
             ) {
                 Text(
@@ -121,7 +122,7 @@ internal fun SettingsScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surfaceBright, shape = RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(16.dp))
                     .padding(8.dp)
             ) {
                 Text(
@@ -152,9 +153,23 @@ internal fun TopBar() {
 
 // Previews
 
-@Preview(showBackground = true)
+@Preview(name = "Light Theme", uiMode = Configuration.UI_MODE_NIGHT_NO)
 @Composable
-private fun DefaultPreview() {
+private fun LightPreview() {
+    MyApplicationTheme {
+        SettingsScreen(
+            Modifier,
+            1,
+            false,
+            onIntervalChange = {},
+            onBackgroundTrackingToggle = {}
+        )
+    }
+}
+
+@Preview(name = "Dark Theme", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun DarkPreview() {
     MyApplicationTheme {
         SettingsScreen(
             Modifier,
