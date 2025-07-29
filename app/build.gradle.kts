@@ -74,6 +74,7 @@ android {
 dependencies {
     implementation(project(":core-ui"))
     implementation(project(":feature-tracking"))
+    implementation(project(":feature-trip-history"))
     implementation(project(":feature-settings"))
 
     // Core Android dependencies
